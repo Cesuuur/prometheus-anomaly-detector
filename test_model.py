@@ -1,13 +1,13 @@
 """docstring for installed packages."""
 import logging
-import numpy as np
-from prometheus_api_client import PrometheusConnect, MetricsList, Metric
-from test_configuration import Configuration
+
 import mlflow
+import numpy as np
+from prometheus_api_client import Metric, MetricsList, PrometheusConnect
 
 # import model_fourier as model
 import model
-
+from test_configuration import Configuration
 
 # Set up logging
 _LOGGER = logging.getLogger(__name__)

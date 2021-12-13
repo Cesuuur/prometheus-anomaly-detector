@@ -1,10 +1,11 @@
 """docstring for installed packages."""
 import datetime
 import logging
-import pandas as pd
+
 import numpy as np
-from prometheus_api_client import Metric
+import pandas as pd
 from numpy import fft
+from prometheus_api_client import Metric
 
 # Set up logging
 _LOGGER = logging.getLogger(__name__)

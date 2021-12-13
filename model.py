@@ -1,9 +1,10 @@
 """doctsring for packages."""
 import datetime
 import logging
+
 import pandas
-from prophet import Prophet
 from prometheus_api_client import Metric
+from prophet import Prophet
 
 # Set up logging
 _LOGGER = logging.getLogger(__name__)

@@ -1,13 +1,12 @@
 """doctsring for packages."""
 import logging
-from prometheus_api_client import Metric
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import LSTM
 
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
+from prometheus_api_client import Metric
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.models import Sequential
 
 # Set up logging
 _LOGGER = logging.getLogger(__name__)
@@ -22,8 +21,14 @@ class MetricPredictor:
     predicted_df = None
     metric = None
 
-    def __init__(self, metric, rolling_data_window_size="10d", number_of_feature=10, validation_ratio=0.2,
-                 parameter_tuning=True):
+    def __init__(
+        self,
+        metric,
+        rolling_data_window_size="10d",
+        number_of_feature=10,
+        validation_ratio=0.2,
+        parameter_tuning=True,
+    ):
         """Initialize the Metric object."""
         self.metric = Metric(metric, rolling_data_window_size)
 
@@ -37,14 +42,18 @@ class MetricPredictor:
         train_x = np.array(data[:, 1])[np.newaxis, :].T
 
         for i in range(self.number_of_features):
-            train_x = np.concatenate((train_x, np.roll(data[:, 1], -i)[np.newaxis, :].T), axis=1)
+            train_x = np.concatenate(
+                (train_x, np.roll(data[:, 1], -i)[np.newaxis, :].T), axis=1
+            )
 
-        train_x = train_x[:train_x.shape[0] - self.number_of_features, :self.number_of_features]
+        train_x = train_x[
+            : train_x.shape[0] - self.number_of_features, : self.number_of_features
+        ]
 
         train_yt = np.roll(data[:, 1], -self.number_of_features + 1)
         train_y = np.roll(data[:, 1], -self.number_of_features)
         train_y = train_y - train_yt
-        train_y = train_y[:train_y.shape[0] - self.number_of_features]
+        train_y = train_y[: train_y.shape[0] - self.number_of_features]
 
         train_x = train_x.reshape(train_x.shape[0], 1, train_x.shape[1])
         return train_x, train_y
@@ -52,7 +61,9 @@ class MetricPredictor:
     def get_model(self, lstm_cell_count, dense_cell_count):
         """Build the model."""
         model = Sequential()
-        model.add(LSTM(64, return_sequences=True, input_shape=(1, self.number_of_features)))
+        model.add(
+            LSTM(64, return_sequences=True, input_shape=(1, self.number_of_features))
+        )
         model.add(LSTM(lstm_cell_count))
         model.add(Dense(dense_cell_count))
         model.add(Dense(1))
@@ -79,12 +90,16 @@ class MetricPredictor:
             for lstm_cell_count_ in lstm_cells:
                 for dense_cell_count_ in dense_cells:
                     model = self.get_model(lstm_cell_count_, dense_cell_count_)
-                    model.compile(loss='mean_squared_error', optimizer='adam')
-                    history = model.fit(np.asarray(x).astype(np.float32),
-                                        np.asarray(y).astype(np.float32),
-                                        epochs=50, batch_size=512, verbose=0,
-                                        validation_split=self.validation_ratio)
-                    val_loss = history.history['val_loss']
+                    model.compile(loss="mean_squared_error", optimizer="adam")
+                    history = model.fit(
+                        np.asarray(x).astype(np.float32),
+                        np.asarray(y).astype(np.float32),
+                        epochs=50,
+                        batch_size=512,
+                        verbose=0,
+                        validation_split=self.validation_ratio,
+                    )
+                    val_loss = history.history["val_loss"]
                     loss_ = min(val_loss)
                     if loss > loss_:
                         lstm_cell_count = lstm_cell_count_
@@ -102,15 +117,26 @@ class MetricPredictor:
         _LOGGER.debug("begin training")
         data_x, data_y = self.prepare_data(metric_values_np)
         _LOGGER.debug(data_x.shape)
-        model.compile(loss='mean_squared_error', optimizer='adam')
-        model.fit(np.asarray(data_x).astype(np.float32), np.asarray(data_y).astype(np.float32), epochs=50, batch_size=512)
-        data_test = np.asarray(metric_values_np[-self.number_of_features:, 1]).astype(np.float32)
+        model.compile(loss="mean_squared_error", optimizer="adam")
+        model.fit(
+            np.asarray(data_x).astype(np.float32),
+            np.asarray(data_y).astype(np.float32),
+            epochs=50,
+            batch_size=512,
+        )
+        data_test = np.asarray(metric_values_np[-self.number_of_features :, 1]).astype(
+            np.float32
+        )
         forecast_values = []
         prev_value = data_test[-1]
         for i in range(int(prediction_duration)):
-            prediction = model.predict(data_test.reshape(1, 1, self.number_of_features)).flatten()[0]
+            prediction = model.predict(
+                data_test.reshape(1, 1, self.number_of_features)
+            ).flatten()[0]
             curr_pred_value = data_test[-1] + prediction
-            scaled_final_value = self.scalar.inverse_transform(curr_pred_value.reshape(1, -1)).flatten()[0]
+            scaled_final_value = self.scalar.inverse_transform(
+                curr_pred_value.reshape(1, -1)
+            ).flatten()[0]
             forecast_values.append(scaled_final_value)
             data_test = np.roll(data_test, -1)
             data_test[-1] = curr_pred_value
@@ -120,9 +146,7 @@ class MetricPredictor:
 
         upper_bound = np.array(
             [
-                (
-                        forecast_values[i] + (np.std(forecast_values[:i]) * 2)
-                )
+                (forecast_values[i] + (np.std(forecast_values[:i]) * 2))
                 for i in range(len(forecast_values))
             ]
         )
@@ -131,9 +155,7 @@ class MetricPredictor:
         )  # to account for no std of a single value
         lower_bound = np.array(
             [
-                (
-                        forecast_values[i] - (np.std(forecast_values[:i]) * 2)
-                )
+                (forecast_values[i] - (np.std(forecast_values[:i]) * 2))
                 for i in range(len(forecast_values))
             ]
         )

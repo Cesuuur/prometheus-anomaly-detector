@@ -1,6 +1,7 @@
 """docstring for installed packages."""
-import os
 import logging
+import os
+
 from prometheus_api_client.utils import parse_datetime, parse_timedelta
 
 if os.getenv("FLT_DEBUG_MODE", "False") == "True":
@@ -61,6 +62,6 @@ class Configuration:
     # An option for Parallelism.
     # An Integer specifying the number of metrics to be trained in parallel.
     # Default: 1.
-    # Note: The upper limit to this will be decided by the number of CPU cores 
+    # Note: The upper limit to this will be decided by the number of CPU cores
     # available to the container.
     parallelism = int(os.getenv("FLT_PARALLELISM", "1"))

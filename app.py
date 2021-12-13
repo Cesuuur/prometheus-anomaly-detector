@@ -1,19 +1,20 @@
 """docstring for packages."""
-import time
-import os
 import logging
+import os
+import time
 from datetime import datetime
-from multiprocessing import Pool, Process, Queue
-from multiprocessing import cpu_count
 from functools import partial
+from multiprocessing import Pool, Process, Queue, cpu_count
 from queue import Empty as EmptyQueueException
+
+import schedule
 import tornado.ioloop
 import tornado.web
-from prometheus_client import Gauge, generate_latest, REGISTRY
-from prometheus_api_client import PrometheusConnect, Metric
-from configuration import Configuration
+from prometheus_api_client import Metric, PrometheusConnect
+from prometheus_client import REGISTRY, Gauge, generate_latest
+
 import model
-import schedule
+from configuration import Configuration
 
 # Set up logging
 _LOGGER = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ METRICS_LIST = Configuration.metrics_list
 
 # list of ModelPredictor Objects shared between processes
 PREDICTOR_MODEL_LIST = list()
+
 
 def all_labels(unique_metric, label_list):
     # global GAUGE_DICT
@@ -35,6 +37,7 @@ def all_labels(unique_metric, label_list):
             if label not in label_list:
                 label_list.append(label)
     return label_list
+
 
 pc = PrometheusConnect(
     url=Configuration.prometheus_url,
@@ -131,19 +134,18 @@ def make_app(data_queue):
         ]
     )
 
+
 def train_individual_model(predictor_model, initial_run):
     metric_to_predict = predictor_model.metric
     pc = PrometheusConnect(
-    url=Configuration.prometheus_url,
-    headers=Configuration.prom_connect_headers,
-    disable_ssl=True,
+        url=Configuration.prometheus_url,
+        headers=Configuration.prom_connect_headers,
+        disable_ssl=True,
     )
 
     data_start_time = datetime.now() - Configuration.metric_chunk_size
     if initial_run:
-        data_start_time = (
-            datetime.now() - Configuration.rolling_training_window_size
-        )
+        data_start_time = datetime.now() - Configuration.rolling_training_window_size
 
     # Download new metric data from prometheus
     new_metric_data = pc.get_metric_range_data(
@@ -155,8 +157,7 @@ def train_individual_model(predictor_model, initial_run):
 
     # Train the new model
     start_time = datetime.now()
-    predictor_model.train(
-            new_metric_data, Configuration.retraining_interval_minutes)
+    predictor_model.train(new_metric_data, Configuration.retraining_interval_minutes)
 
     _LOGGER.info(
         "Total Training time taken = %s, for metric: %s %s",
@@ -165,6 +166,7 @@ def train_individual_model(predictor_model, initial_run):
         metric_to_predict.label_config,
     )
     return predictor_model
+
 
 def train_model(initial_run=False, data_queue=None):
     """Train the machine learning model."""
