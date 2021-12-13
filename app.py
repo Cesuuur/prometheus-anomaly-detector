@@ -23,6 +23,18 @@ METRICS_LIST = Configuration.metrics_list
 # list of ModelPredictor Objects shared between processes
 PREDICTOR_MODEL_LIST = list()
 
+def all_labels(unique_metric, label_list):
+    # global GAUGE_DICT
+    # Si es una nueva métrica inicializamos la lista
+    if unique_metric.metric_name not in GAUGE_DICT:
+        label_list = list(unique_metric.label_config.keys())
+        label_list.append("value_type")
+    # si no recorremos todo el set de etiquetas (nueva serie, pero misma métrica) y añadimos las que no tengamos ya guardadas
+    else:
+        for label in list(unique_metric.label_config.keys()):
+            if label not in label_list:
+                label_list.append(label)
+    return label_list
 
 pc = PrometheusConnect(
     url=Configuration.prometheus_url,
@@ -44,10 +56,10 @@ for metric in METRICS_LIST:
 
 # A gauge set for the predicted values
 GAUGE_DICT = dict()
+label_list = list()
 for predictor in PREDICTOR_MODEL_LIST:
     unique_metric = predictor.metric
-    label_list = list(unique_metric.label_config.keys())
-    label_list.append("value_type")
+    label_list = all_labels(unique_metric, label_list)
     if unique_metric.metric_name not in GAUGE_DICT:
         GAUGE_DICT[unique_metric.metric_name] = Gauge(
             unique_metric.metric_name + "_" + predictor.model_name,
