@@ -4,7 +4,7 @@ This repository contains the prototype for a Prometheus Anomaly Detector (PAD) w
 Prometheus is the chosen application to do monitoring across multiple products and platforms. Prometheus metrics are time series data identified by metric name and key/value pairs. With the increased amount of metrics flowing in it is getting harder to see the signals within the noise. The current state of the art is to graph out metrics on dashboards and alert on thresholds. This application leverages machine learning algorithms such as Fourier and Prophet models to perform time series forecasting and predict anomalous behavior in the metrics. The predicted values are compared with the actual values and if they differ from the default threshold values, it is flagged as an anomaly.
 
 ## Use Case
-The use case for this framework is to assist teams in real-time alerting of their system/application metrics. The time series forecasting performed by the models can be used by developers to update/enhance their systems to tackle the anomalies in the future.   
+The use case for this framework is to assist teams in real-time alerting of their system/application metrics. The time series forecasting performed by the models can be used by developers to update/enhance their systems to tackle the anomalies in the future.
 
 ## Configurations
 * `FLT_PROM_URL` - URL for the prometheus host, from where the metric data will be collected
@@ -16,7 +16,7 @@ The use case for this framework is to assist teams in real-time alerting of thei
 <br> Example: If this parameter is set to `15`, it will collect the past 15 minutes of metric data every 15 minutes and append it to the training dataframe.
 * `FLT_ROLLING_TRAINING_WINDOW_SIZE` - This parameter limits the size of the training dataframe to prevent Out of Memory errors. It can be set to the duration of data that should be stored in memory as dataframes. (Default `15d`)
 <br> Example: If set to `1d`, every time before training the model using the training dataframe, the metric data that is older than 1 day will be deleted.
-* `FLT_PARALLELISM` - An option for parallelism. Each metric is "assigned" a separate model object. This parameter reperesents the number of models that will be trained concurrently. 
+* `FLT_PARALLELISM` - An option for parallelism. Each metric is "assigned" a separate model object. This parameter reperesents the number of models that will be trained concurrently.
 <br> The default value is set as `1` and the upper limit will depend on the number of CPU cores provided to the container.
 If you are testing locally, you can do the following:
 - Environment variables are loaded from `.env`. `pipenv` will load these automatically. So make sure you execute everything via `pipenv install`.
@@ -106,6 +106,3 @@ make run_test
 You can now view the metrics being logged in your MLFlow tracking server UI.
 
 ![Screenshot from 2019-09-04 15-27-36](https://user-images.githubusercontent.com/7343099/64284885-8e075f00-cf28-11e9-877c-ebe4e397d2fe.png)
-
-
-
