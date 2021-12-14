@@ -2,12 +2,13 @@
 import logging
 
 import mlflow
-import numpy as np
-from prometheus_api_client import Metric, MetricsList, PrometheusConnect
 
 # import model_fourier as model
 import model
-from test_configuration import Configuration
+import numpy as np
+from prometheus_api_client import Metric, MetricsList, PrometheusConnect
+
+from .test_configuration import Configuration
 
 # Set up logging
 _LOGGER = logging.getLogger(__name__)

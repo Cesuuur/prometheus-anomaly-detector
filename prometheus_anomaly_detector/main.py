@@ -1,6 +1,6 @@
 """docstring for packages."""
+
 import logging
-import os
 import time
 from datetime import datetime
 from functools import partial
@@ -13,8 +13,8 @@ import tornado.web
 from prometheus_api_client import Metric, PrometheusConnect
 from prometheus_client import REGISTRY, Gauge, generate_latest
 
-import model
-from configuration import Configuration
+from .configuration import Configuration
+from .model import MetricPredictor
 
 # Set up logging
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ for metric in METRICS_LIST:
 
     for unique_metric in metric_init:
         PREDICTOR_MODEL_LIST.append(
-            model.MetricPredictor(
+            MetricPredictor(
                 unique_metric,
                 rolling_data_window_size=Configuration.rolling_training_window_size,
             )
@@ -180,7 +180,7 @@ def train_model(initial_run=False, data_queue=None):
     data_queue.put(PREDICTOR_MODEL_LIST)
 
 
-if __name__ == "__main__":
+def main():
     # Queue to share data between the tornado server and the model training
     predicted_model_queue = Queue()
 

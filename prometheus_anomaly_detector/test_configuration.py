@@ -1,4 +1,5 @@
-"""docstring for installed packages."""
+"""docstring for packages."""
+
 import logging
 import os
 
@@ -41,12 +42,28 @@ class Configuration:
         )
     ).split(";")
 
+    # uri for the mlflow tracking server
+    mlflow_tracking_uri = str(os.getenv("MLFLOW_TRACKING_URI"))
+
+    # threshold value to calculate true anomalies using a linear function
+    true_anomaly_threshold = float(os.getenv("FLT_TRUE_ANOMALY_THRESHOLD", "0.001"))
+
+    metric_start_time = parse_datetime(
+        os.getenv("FLT_DATA_START_TIME", "2019-08-05 18:00:00")
+    )
+
+    metric_end_time = parse_datetime(
+        os.getenv("FLT_DATA_END_TIME", "2019-08-08 18:00:00")
+    )
+
     # this will create a rolling data window on which the model will be trained
     # example: if set to 15d will train the model on past 15 days of data,
     # every time new data is added, it will truncate the data that is out of this range.
     rolling_training_window_size = parse_timedelta(
-        "now", os.getenv("FLT_ROLLING_TRAINING_WINDOW_SIZE", "3d")
+        "now", os.getenv("FLT_ROLLING_TRAINING_WINDOW_SIZE", "2d")
     )
+
+    metric_train_data_end_time = metric_start_time + rolling_training_window_size
 
     # How often should the anomaly detector retrain the model (in minutes)
     retraining_interval_minutes = int(
@@ -54,14 +71,15 @@ class Configuration:
     )
     metric_chunk_size = parse_timedelta("now", str(retraining_interval_minutes) + "m")
 
+    _LOGGER.info("Metric train data start time: %s", metric_start_time)
+    _LOGGER.info(
+        "Metric train data end time/test data start time: %s",
+        metric_train_data_end_time,
+    )
+    _LOGGER.info("Metric test end time: %s", metric_end_time)
     _LOGGER.info(
         "Metric data rolling training window size: %s", rolling_training_window_size
     )
     _LOGGER.info("Model retraining interval: %s minutes", retraining_interval_minutes)
-
-    # An option for Parallelism.
-    # An Integer specifying the number of metrics to be trained in parallel.
-    # Default: 1.
-    # Note: The upper limit to this will be decided by the number of CPU cores
-    # available to the container.
-    parallelism = int(os.getenv("FLT_PARALLELISM", "1"))
+    _LOGGER.info("True anomaly threshold: %s", true_anomaly_threshold)
+    _LOGGER.info("MLflow server url: %s", mlflow_tracking_uri)
